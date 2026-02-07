@@ -2677,7 +2677,8 @@ export default function ManlebSalesAnalyzer() {
       ? ((currentSales - prevYearSales) / prevYearSales * 100).toFixed(1)
       : null;
 
-    // 2. 선택월 총이익 (POS 매출 × 레시피 원가 매칭)
+    // v2에서 복구: 선택월 총이익 (원재료/레시피 기능 추가 후)
+    /*
     let totalCost = 0;
     let matchedCount = 0;
     let unmatchedCount = 0;
@@ -2695,12 +2696,13 @@ export default function ManlebSalesAnalyzer() {
     const totalProfit = currentSales - totalCost;
     const profitRate = currentSales > 0 ? ((totalProfit / currentSales) * 100).toFixed(1) : 0;
     const costRate = currentSales > 0 ? ((totalCost / currentSales) * 100).toFixed(1) : 0;
+    */
 
-    // 3. 선택월 발주금액 (원재료 매입)
+    // v2에서 복구: 선택월 발주금액 (원재료/레시피 기능 추가 후)
+    /*
     const purchaseStats = getMonthlyPurchaseStats();
     const currentPurchase = purchaseStats.totalAmount;
 
-    // 전월 발주금액 계산
     const prevMonthPurchase = (() => {
       let total = 0;
       ingredients.forEach(ing => {
@@ -2717,6 +2719,7 @@ export default function ManlebSalesAnalyzer() {
     const purchaseChange = prevMonthPurchase > 0
       ? ((currentPurchase - prevMonthPurchase) / prevMonthPurchase * 100).toFixed(1)
       : null;
+    */
 
     // 4. 일 평균 매출
     const uniqueDays = new Set(currentMonthData.map(item => item.dateStr)).size;
@@ -2731,16 +2734,10 @@ export default function ManlebSalesAnalyzer() {
       currentSales,
       monthChange,
       yearChange,
-      // 선택월 총이익
-      totalProfit,
-      totalCost,
-      profitRate,
-      costRate,
-      matchedCount,
-      unmatchedCount,
-      // 선택월 발주금액
-      currentPurchase,
-      purchaseChange,
+      // v2에서 복구: 선택월 총이익
+      // totalProfit, totalCost, profitRate, costRate, matchedCount, unmatchedCount,
+      // v2에서 복구: 선택월 발주금액
+      // currentPurchase, purchaseChange,
       // 일 평균 매출
       avgDaily,
       uniqueDays,
@@ -6185,11 +6182,11 @@ export default function ManlebSalesAnalyzer() {
                 {/* 전체 요약 */}
                 {activeTab === 'overview' && (
                   <div className="space-y-6">
-                    {/* 5개 메인 카드 */}
+                    {/* 3개 메인 카드 (v2에서 5개로 복구: 총이익/발주금액 카드 추가) */}
                     {(() => {
                       const stats = getDashboardStats();
                       return (
-                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           {/* 카드 1: 선택월 매출 */}
                           <GlassCard className="p-5">
                             <div className="flex items-start justify-between mb-2">
@@ -6225,7 +6222,8 @@ export default function ManlebSalesAnalyzer() {
                             </div>
                           </GlassCard>
 
-                          {/* 카드 2: 선택월 총이익 */}
+                          {/* v2에서 복구: 선택월 총이익 카드 (원재료/레시피 기능 추가 후) */}
+                          {/*
                           <GlassCard className="p-5">
                             <div className="flex items-start justify-between mb-2">
                               <p className="text-sm text-white/50">선택월 총이익</p>
@@ -6254,8 +6252,10 @@ export default function ManlebSalesAnalyzer() {
                               </p>
                             )}
                           </GlassCard>
+                          */}
 
-                          {/* 카드 3: 선택월 발주금액 */}
+                          {/* v2에서 복구: 선택월 발주금액 카드 (원재료/레시피 기능 추가 후) */}
+                          {/*
                           <GlassCard className="p-5">
                             <div className="flex items-start justify-between mb-2">
                               <p className="text-sm text-white/50">선택월 발주금액</p>
@@ -6279,6 +6279,7 @@ export default function ManlebSalesAnalyzer() {
                               </div>
                             </div>
                           </GlassCard>
+                          */}
 
                           {/* 카드 4: 일 평균 매출 */}
                           <GlassCard className="p-5">
