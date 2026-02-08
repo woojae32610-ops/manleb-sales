@@ -1086,7 +1086,7 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
               </div>
               <div>
                 <label className="block text-white/60 text-xs mb-1">출산보육수당</label>
-                <span className="block text-white/30 text-xs mb-1">(자녀당 월 20만원 한도)</span>
+                <span className="block text-white/30 text-xs mb-1">(자녀당 월 20만원)</span>
                 <input
                   type="number"
                   value={taxExempt.childcare || ''}
