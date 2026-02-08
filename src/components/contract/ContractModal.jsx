@@ -4,7 +4,7 @@ import { CONTRACT_TYPES, CONTRACT_TYPE_LABELS, getRecommendations, assembleContr
 import { generateDOCX } from './generateDOCX.js';
 import { generatePDF } from './generatePDF.js';
 
-const MIN_WAGE_2025 = 10030;
+const MIN_WAGE_2026 = 10320;
 
 const ContractModal = ({ show, onClose, employees, fullStoreInfo, preselectedEmployeeId }) => {
   const [step, setStep] = useState(1);
@@ -58,7 +58,7 @@ const ContractModal = ({ show, onClose, employees, fullStoreInfo, preselectedEmp
   const recommendations = selectedEmployee ? getRecommendations(selectedEmployee) : Object.entries(CONTRACT_TYPE_LABELS).map(([key, label]) => ({ type: key, label, recommended: false }));
 
   // 최저시급 경고
-  const showMinWageWarning = selectedEmployee?.type === 'hourly' && Number(selectedEmployee.hourlyWage) < MIN_WAGE_2025;
+  const showMinWageWarning = selectedEmployee?.type === 'hourly' && Number(selectedEmployee.hourlyWage) < MIN_WAGE_2026;
 
   const handleDetail = (field, value) => {
     setContractDetails(prev => ({ ...prev, [field]: value }));
@@ -169,7 +169,7 @@ const ContractModal = ({ show, onClose, employees, fullStoreInfo, preselectedEmp
                   <div>
                     <p className="text-amber-400 text-sm font-medium">최저시급 미만 경고</p>
                     <p className="text-white/60 text-xs mt-1">
-                      현재 시급 {Number(selectedEmployee.hourlyWage).toLocaleString()}원은 2025년 최저시급 {MIN_WAGE_2025.toLocaleString()}원 미만입니다.
+                      현재 시급 {Number(selectedEmployee.hourlyWage).toLocaleString()}원은 2026년 최저시급 {MIN_WAGE_2026.toLocaleString()}원 미만입니다.
                     </p>
                   </div>
                 </div>

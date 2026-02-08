@@ -668,14 +668,17 @@ const RecipeForm = ({ initialData, categories, ingredients, onSubmit, onCancel, 
   );
 };
 
+// 비과세 한도 상수 (월급제 전용)
+const TAX_EXEMPT_LIMITS = { meal: 200000, transport: 200000, childcare: 200000 };
+
 // 직원 추가/수정 폼 컴포넌트
 const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
-  const MIN_WAGE_2025 = 10030; // 2025년 최저시급
+  const MIN_WAGE_2026 = 10320; // 2026년 최저시급
 
   const [form, setForm] = useState(initialData || {
     name: '',
     type: 'hourly', // 'hourly' (시급제) | 'monthly' (월급제) | 'daily' (일용직) | 'freelancer' (프리랜서)
-    hourlyWage: MIN_WAGE_2025,
+    hourlyWage: MIN_WAGE_2026,
     monthlyWage: 2500000,
     weeklyHours: 20,
     workDaysPerWeek: 5,
@@ -697,7 +700,9 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
       health: false,       // 건강보험
       employment: false,   // 고용보험
       industrial: false,   // 산재보험
-    }
+    },
+    // 비과세 항목 (월급제 전용)
+    taxExempt: { meal: 0, transport: 0, childcare: 0 },
   });
 
   // 1일 소정근로시간 계산
@@ -751,17 +756,30 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
 
   const monthlyPay = calculateMonthlyPay();
 
-  // 4대보험 사업주 부담 계산
+  // 비과세 합계 계산 (월급제 전용, 각 항목 한도 적용, 월급 초과 불가)
+  const taxExempt = form.taxExempt || { meal: 0, transport: 0, childcare: 0 };
+  const getTotalTaxExempt = () => {
+    if (form.type !== 'monthly') return 0;
+    const meal = Math.min(Number(taxExempt.meal) || 0, TAX_EXEMPT_LIMITS.meal);
+    const transport = Math.min(Number(taxExempt.transport) || 0, TAX_EXEMPT_LIMITS.transport);
+    const childcare = Math.min(Number(taxExempt.childcare) || 0, TAX_EXEMPT_LIMITS.childcare);
+    return Math.min(meal + transport + childcare, monthlyPay);
+  };
+  const totalTaxExempt = getTotalTaxExempt();
+  const taxableAmount = form.type === 'monthly' ? monthlyPay - totalTaxExempt : monthlyPay;
+
+  // 4대보험 사업주 부담 계산 (월급제: 과세 대상 기준)
   const calculateInsuranceCost = () => {
     if (form.taxType !== 'insurance') return 0;
+    const base = form.type === 'monthly' ? taxableAmount : monthlyPay;
     let total = 0;
-    if (form.insurance.national) total += monthlyPay * insuranceRates.national;
+    if (form.insurance.national) total += base * insuranceRates.national;
     if (form.insurance.health) {
-      total += monthlyPay * insuranceRates.health;
-      total += monthlyPay * insuranceRates.healthLong;
+      total += base * insuranceRates.health;
+      total += base * insuranceRates.healthLong;
     }
-    if (form.insurance.employment) total += monthlyPay * insuranceRates.employment;
-    if (form.insurance.industrial) total += monthlyPay * insuranceRates.industrial;
+    if (form.insurance.employment) total += base * insuranceRates.employment;
+    if (form.insurance.industrial) total += base * insuranceRates.industrial;
     return Math.round(total);
   };
 
@@ -773,7 +791,8 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
 
   // 직원 부담 4대보험 (국민연금4.5% + 건강보험3.545% + 장기요양0.46% + 고용보험0.9% = 9.405%)
   const employeeInsuranceRate = 0.045 + 0.03545 + 0.0046 + 0.009; // 0.09405
-  const employeeInsuranceDeduction = form.taxType === 'insurance' ? Math.round(monthlyPay * employeeInsuranceRate) : 0;
+  const insuranceBase = form.type === 'monthly' ? taxableAmount : monthlyPay;
+  const employeeInsuranceDeduction = form.taxType === 'insurance' ? Math.round(insuranceBase * employeeInsuranceRate) : 0;
   // 직원 실수령액
   const employeeNetPay = form.taxType === 'daily'
     ? monthlyPay
@@ -810,6 +829,14 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
       // 프리랜서 전용
       monthlyFee: Number(form.monthlyFee) || 0,
       totalFee: Number(form.totalFee) || 0,
+      // 비과세 항목 (월급제 전용)
+      taxExempt: form.type === 'monthly' ? {
+        meal: Number(taxExempt.meal) || 0,
+        transport: Number(taxExempt.transport) || 0,
+        childcare: Number(taxExempt.childcare) || 0,
+      } : { meal: 0, transport: 0, childcare: 0 },
+      totalTaxExempt: form.type === 'monthly' ? totalTaxExempt : 0,
+      taxableAmount: form.type === 'monthly' ? taxableAmount : monthlyPay,
       // 계산된 값들도 저장
       weeklyHolidayPay: weeklyHolidayPayMonthly,
       calculatedMonthlyPay: monthlyPay,
@@ -885,7 +912,7 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
                 onChange={(e) => setForm({ ...form, hourlyWage: e.target.value })}
                 className="w-full px-4 py-2.5 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-cyan-400"
               />
-              <p className="text-xs text-white/40 mt-1">2025년 최저시급: {MIN_WAGE_2025.toLocaleString()}원</p>
+              <p className="text-xs text-white/40 mt-1">2026년 최저시급: {MIN_WAGE_2026.toLocaleString()}원</p>
             </div>
             <div>
               <label className="block text-white/60 text-sm mb-1">주간 근무시간 (자동계산)</label>
@@ -1023,6 +1050,64 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
             </div>
           </div>
           <p className="text-xs text-white/40">월급제는 주휴수당이 이미 포함되어 있습니다.</p>
+
+          {/* 비과세 항목 (월급제 전용) */}
+          <div className="mt-4 p-3 bg-green-500/5 rounded-xl border border-green-500/20 space-y-3">
+            <p className="text-sm text-green-400 font-medium">비과세 항목 (선택)</p>
+            <p className="text-xs text-white/40">비과세 항목을 설정하면 과세 대상 금액이 줄어 소득세·4대보험이 절감됩니다.</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-white/60 text-xs mb-1">식대 (월 20만원 한도)</label>
+                <input
+                  type="number"
+                  value={taxExempt.meal || ''}
+                  onChange={(e) => {
+                    const v = Math.min(Math.max(0, Number(e.target.value) || 0), TAX_EXEMPT_LIMITS.meal);
+                    setForm({ ...form, taxExempt: { ...taxExempt, meal: v } });
+                  }}
+                  placeholder="0"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-white/40 focus:outline-none focus:border-green-400"
+                />
+              </div>
+              <div>
+                <label className="block text-white/60 text-xs mb-1">자가운전보조금 (월 20만원 한도)</label>
+                <input
+                  type="number"
+                  value={taxExempt.transport || ''}
+                  onChange={(e) => {
+                    const v = Math.min(Math.max(0, Number(e.target.value) || 0), TAX_EXEMPT_LIMITS.transport);
+                    setForm({ ...form, taxExempt: { ...taxExempt, transport: v } });
+                  }}
+                  placeholder="0"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-white/40 focus:outline-none focus:border-green-400"
+                />
+              </div>
+              <div>
+                <label className="block text-white/60 text-xs mb-1">출산보육수당 (월 20만원 한도)</label>
+                <input
+                  type="number"
+                  value={taxExempt.childcare || ''}
+                  onChange={(e) => {
+                    const v = Math.min(Math.max(0, Number(e.target.value) || 0), TAX_EXEMPT_LIMITS.childcare);
+                    setForm({ ...form, taxExempt: { ...taxExempt, childcare: v } });
+                  }}
+                  placeholder="0"
+                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-white/40 focus:outline-none focus:border-green-400"
+                />
+              </div>
+            </div>
+            {totalTaxExempt > 0 && (
+              <div className="flex justify-between items-center pt-2 border-t border-green-500/20">
+                <div className="text-xs space-y-0.5">
+                  <p className="text-green-400">비과세 합계: {totalTaxExempt.toLocaleString()}원</p>
+                  <p className="text-white/60">과세 대상: {taxableAmount.toLocaleString()}원</p>
+                </div>
+                <div className="text-right text-xs text-white/40">
+                  월급 {monthlyPay.toLocaleString()}원 중
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1180,7 +1265,7 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
 
       {/* 계산 결과 */}
       <div className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/30">
-        <p className="text-sm text-green-400 font-medium mb-3">월 인건비 계산{form.taxType === 'daily' ? ' (참고용 예상)' : ''}</p>
+        <p className="text-sm text-green-400 font-medium mb-3">월 예상 인건비 계산{form.taxType === 'daily' ? ' (참고용 예상)' : ''}</p>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-white/60">
@@ -1394,7 +1479,7 @@ const WorkRecordForm = ({ employee, date, existingRecord, onSubmit, onCancel, on
                 return (
                   <>
                     <p className="text-amber-400">차이: +{diff.toFixed(1)}시간 (연장근무)</p>
-                    <p className="text-amber-300 font-medium">연장수당: {diff.toFixed(1)}h × {(employee?.hourlyWage || 10030).toLocaleString()}원 = {Math.round(diff * (employee?.hourlyWage || 10030)).toLocaleString()}원</p>
+                    <p className="text-amber-300 font-medium">연장수당: {diff.toFixed(1)}h × {(employee?.hourlyWage || 10320).toLocaleString()}원 = {Math.round(diff * (employee?.hourlyWage || 10320)).toLocaleString()}원</p>
                   </>
                 );
               } else if (diff < 0) {
@@ -2237,9 +2322,18 @@ export default function ManlebSalesAnalyzer() {
 
     // 월급제는 고정 급여
     if (employee.type === 'monthly') {
+      // 비과세 항목 반영
+      const te = employee.taxExempt || { meal: 0, transport: 0, childcare: 0 };
+      const mTotalTaxExempt = Math.min(
+        Math.min(Number(te.meal) || 0, TAX_EXEMPT_LIMITS.meal) +
+        Math.min(Number(te.transport) || 0, TAX_EXEMPT_LIMITS.transport) +
+        Math.min(Number(te.childcare) || 0, TAX_EXEMPT_LIMITS.childcare),
+        employee.monthlyWage
+      );
+      const mTaxableAmount = employee.monthlyWage - mTotalTaxExempt;
       const mInsurance = employee.insuranceCost || 0;
       const mEmployeeInsRate = 0.045 + 0.03545 + 0.0046 + 0.009;
-      const mEmployeeInsDed = (employee.taxType === 'insurance' || !employee.taxType) ? Math.round(employee.monthlyWage * mEmployeeInsRate) : 0;
+      const mEmployeeInsDed = (employee.taxType === 'insurance' || !employee.taxType) ? Math.round(mTaxableAmount * mEmployeeInsRate) : 0;
       const mWithholding = employee.taxType === 'withholding' ? Math.round(employee.monthlyWage * 0.033) : 0;
       const mNetPay = employee.taxType === 'withholding'
         ? employee.monthlyWage - mWithholding
@@ -2256,6 +2350,8 @@ export default function ManlebSalesAnalyzer() {
         paidLeavePay: 0,
         weeklyHolidayPay: 0,
         totalPay: employee.monthlyWage,
+        totalTaxExempt: mTotalTaxExempt,
+        taxableAmount: mTaxableAmount,
         insurancePay: mInsurance,
         withholdingDeduction: mWithholding,
         employeeInsuranceDeduction: mEmployeeInsDed,
@@ -5326,6 +5422,18 @@ export default function ManlebSalesAnalyzer() {
                                     {emp.taxType === 'withholding' ? ` (3.3% 공제: ${(payroll.withholdingDeduction || 0).toLocaleString()}원)` : ''}
                                     {emp.taxType === 'daily' ? ' (일용직)' : ''}
                                   </div>
+                                  {(payroll.totalTaxExempt || 0) > 0 && (
+                                    <div className="p-2 bg-green-500/10 rounded-lg border border-green-500/20 space-y-0.5">
+                                      <div className="flex justify-between text-xs">
+                                        <span className="text-green-400">비과세 합계</span>
+                                        <span className="text-green-400">{payroll.totalTaxExempt.toLocaleString()}원</span>
+                                      </div>
+                                      <div className="flex justify-between text-xs">
+                                        <span className="text-white/50">과세 대상</span>
+                                        <span className="text-white/70">{payroll.taxableAmount.toLocaleString()}원</span>
+                                      </div>
+                                    </div>
+                                  )}
                                   <div className="flex justify-between">
                                     <span className="text-white/60">직원 실수령</span>
                                     <span className="text-cyan-400 font-medium">{(payroll.employeeNetPay || payroll.totalPay).toLocaleString()}원</span>

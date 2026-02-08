@@ -101,8 +101,8 @@ const FAQ_ITEMS = [
     a: '500만원 이하 벌금 또는 과태료가 부과됩니다. 꼭 서면으로 작성하고, 직원에게도 한 부 주셔야 해요!\n\n만렙사장에서 쉽게 만들 수 있으니 꼭 작성하세요! 📝',
   },
   {
-    q: '2025년 최저시급이 얼마인가요?',
-    a: '시간급 10,030원입니다.\n\n일급 환산: 80,240원 (8시간 기준)\n월급 환산: 2,096,270원 (주 40시간, 주휴수당 포함)\n\n⚠️ 최저시급 미만 지급 시 3년 이하 징역 또는 2천만원 이하 벌금에 처해질 수 있습니다.',
+    q: '2026년 최저시급이 얼마인가요?',
+    a: '시간급 10,320원입니다.\n\n일급 환산: 82,560원 (8시간 기준)\n월급 환산: 2,156,880원 (주 40시간, 주휴수당 포함)\n\n⚠️ 최저시급 미만 지급 시 3년 이하 징역 또는 2천만원 이하 벌금에 처해질 수 있습니다.',
   },
   {
     q: '손익관리에서 순이익이 마이너스예요 😢',
@@ -308,7 +308,7 @@ function EmployeesContent() {
           <div className="border-t border-white/10 pt-3">
             <p className="text-white font-medium mb-2">고용 형태를 선택하세요:</p>
             <div className="space-y-2 text-sm">
-              <p>○ <strong className="text-cyan-400">시급제</strong> → 시간당 얼마를 주는 알바 (예: 시급 10,030원)</p>
+              <p>○ <strong className="text-cyan-400">시급제</strong> → 시간당 얼마를 주는 알바 (예: 시급 10,320원)</p>
               <p>○ <strong className="text-green-400">월급제</strong> → 매달 정해진 월급을 주는 직원 (예: 월 250만원)</p>
               <p>○ <strong className="text-orange-400">일용직</strong> → 하루만 일하는 단기 대타</p>
               <p>○ <strong className="text-indigo-400">3.3% 프리랜서</strong> → 세금 3.3%만 떼는 외주 (예: 배달대행)</p>
@@ -326,10 +326,10 @@ function EmployeesContent() {
         <p className="text-white/70 text-base">1주일에 15시간 이상 일하고, 개근하면 법적으로 하루치 급여를 더 줘야 해요. 이걸 주휴수당이라고 합니다.</p>
         <CalcBox>{`🧮 계산 예시
 
-김알바: 시급 10,030원, 주 25시간
+김알바: 시급 10,320원, 주 25시간
 
-주휴수당 = (25시간 ÷ 40) × 8 × 10,030원
-        = 50,150원 (1주일에)
+주휴수당 = (25시간 ÷ 40) × 8 × 10,320원
+        = 51,600원 (1주일에)
 
 💰 이 계산을 만렙사장이 자동으로 해줘요!`}</CalcBox>
         <WarnBox>주 15시간 미만이면 주휴수당을 안 줘도 됩니다. 월급제 직원은 이미 월급에 포함되어 있어요.</WarnBox>
@@ -408,7 +408,7 @@ function PayrollContent() {
             <p>기본급 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1,253,750원 ← 일한 시간 × 시급</p>
             <p>+ 주휴수당 &nbsp;&nbsp;&nbsp;&nbsp; 217,650원 ← 자동 계산</p>
             <p>+ 연장수당 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 20,060원 ← 야근한 거</p>
-            <p>- 차감(조퇴) &nbsp;&nbsp; -10,030원 ← 조퇴한 거</p>
+            <p>- 차감(조퇴) &nbsp;&nbsp; -10,320원 ← 조퇴한 거(1시간)</p>
             <div className="border-t border-white/20 pt-2">
               <p className="text-cyan-400 font-bold">💰 총 급여 &nbsp;&nbsp;&nbsp;&nbsp; 1,481,430원</p>
             </div>
