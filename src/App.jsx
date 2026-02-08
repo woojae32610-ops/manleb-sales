@@ -669,7 +669,7 @@ const RecipeForm = ({ initialData, categories, ingredients, onSubmit, onCancel, 
 };
 
 // 비과세 한도 상수 (월급제 전용)
-const TAX_EXEMPT_LIMITS = { meal: 200000, transport: 200000, childcare: 200000 };
+const TAX_EXEMPT_LIMITS = { meal: 200000, transport: 200000, childcarePerChild: 200000 };
 
 // 직원 추가/수정 폼 컴포넌트
 const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
@@ -702,7 +702,7 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
       industrial: false,   // 산재보험
     },
     // 비과세 항목 (월급제 전용)
-    taxExempt: { meal: 0, transport: 0, childcare: 0 },
+    taxExempt: { meal: 0, transport: 0, childcare: 0, numberOfChildren: 0 },
   });
 
   // 1일 소정근로시간 계산
@@ -757,12 +757,13 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
   const monthlyPay = calculateMonthlyPay();
 
   // 비과세 합계 계산 (월급제 전용, 각 항목 한도 적용, 월급 초과 불가)
-  const taxExempt = form.taxExempt || { meal: 0, transport: 0, childcare: 0 };
+  const taxExempt = form.taxExempt || { meal: 0, transport: 0, childcare: 0, numberOfChildren: 0 };
+  const childcareLimit = (Number(taxExempt.numberOfChildren) || 0) * TAX_EXEMPT_LIMITS.childcarePerChild;
   const getTotalTaxExempt = () => {
     if (form.type !== 'monthly') return 0;
     const meal = Math.min(Number(taxExempt.meal) || 0, TAX_EXEMPT_LIMITS.meal);
     const transport = Math.min(Number(taxExempt.transport) || 0, TAX_EXEMPT_LIMITS.transport);
-    const childcare = Math.min(Number(taxExempt.childcare) || 0, TAX_EXEMPT_LIMITS.childcare);
+    const childcare = Math.min(Number(taxExempt.childcare) || 0, childcareLimit);
     return Math.min(meal + transport + childcare, monthlyPay);
   };
   const totalTaxExempt = getTotalTaxExempt();
@@ -834,7 +835,8 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
         meal: Number(taxExempt.meal) || 0,
         transport: Number(taxExempt.transport) || 0,
         childcare: Number(taxExempt.childcare) || 0,
-      } : { meal: 0, transport: 0, childcare: 0 },
+        numberOfChildren: Number(taxExempt.numberOfChildren) || 0,
+      } : { meal: 0, transport: 0, childcare: 0, numberOfChildren: 0 },
       totalTaxExempt: form.type === 'monthly' ? totalTaxExempt : 0,
       taxableAmount: form.type === 'monthly' ? taxableAmount : monthlyPay,
       // 계산된 값들도 저장
@@ -1055,7 +1057,7 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
           <div className="mt-4 p-3 bg-green-500/5 rounded-xl border border-green-500/20 space-y-3">
             <p className="text-sm text-green-400 font-medium">비과세 항목 (선택)</p>
             <p className="text-xs text-white/40">비과세 항목을 설정하면 과세 대상 금액이 줄어 소득세·4대보험이 절감됩니다.</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-3">
               <div>
                 <label className="block text-white/60 text-xs mb-1">식대 (월 20만원 한도)</label>
                 <input
@@ -1083,16 +1085,38 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
                 />
               </div>
               <div>
-                <label className="block text-white/60 text-xs mb-1">출산보육수당 (월 20만원 한도)</label>
+                <label className="block text-white/60 text-xs mb-1">출산보육수당 (자녀 1명당 월 20만원 한도)</label>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-white/50 text-xs">6세 이하 자녀 수</span>
+                  <input
+                    type="number"
+                    value={taxExempt.numberOfChildren || ''}
+                    onChange={(e) => {
+                      const numChildren = Math.max(0, Math.min(Number(e.target.value) || 0, 10));
+                      const newLimit = numChildren * TAX_EXEMPT_LIMITS.childcarePerChild;
+                      const adjustedChildcare = Math.min(Number(taxExempt.childcare) || 0, newLimit);
+                      setForm({ ...form, taxExempt: { ...taxExempt, numberOfChildren: numChildren, childcare: numChildren === 0 ? 0 : adjustedChildcare } });
+                    }}
+                    min={0}
+                    max={10}
+                    placeholder="0"
+                    className="w-16 px-2 py-1.5 bg-white/10 border border-white/20 rounded-lg text-white text-sm text-center placeholder-white/40 focus:outline-none focus:border-green-400"
+                  />
+                  <span className="text-white/50 text-xs">명</span>
+                  {(Number(taxExempt.numberOfChildren) || 0) > 0 && (
+                    <span className="text-green-400/70 text-xs">→ 한도: {childcareLimit.toLocaleString()}원</span>
+                  )}
+                </div>
                 <input
                   type="number"
                   value={taxExempt.childcare || ''}
                   onChange={(e) => {
-                    const v = Math.min(Math.max(0, Number(e.target.value) || 0), TAX_EXEMPT_LIMITS.childcare);
+                    const v = Math.min(Math.max(0, Number(e.target.value) || 0), childcareLimit);
                     setForm({ ...form, taxExempt: { ...taxExempt, childcare: v } });
                   }}
                   placeholder="0"
-                  className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-white/40 focus:outline-none focus:border-green-400"
+                  disabled={!(Number(taxExempt.numberOfChildren) || 0)}
+                  className={`w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white text-sm placeholder-white/40 focus:outline-none focus:border-green-400 ${!(Number(taxExempt.numberOfChildren) || 0) ? 'opacity-40 cursor-not-allowed' : ''}`}
                 />
               </div>
             </div>
@@ -2323,11 +2347,12 @@ export default function ManlebSalesAnalyzer() {
     // 월급제는 고정 급여
     if (employee.type === 'monthly') {
       // 비과세 항목 반영
-      const te = employee.taxExempt || { meal: 0, transport: 0, childcare: 0 };
+      const te = employee.taxExempt || { meal: 0, transport: 0, childcare: 0, numberOfChildren: 0 };
+      const mChildcareLimit = (Number(te.numberOfChildren) || 0) * TAX_EXEMPT_LIMITS.childcarePerChild;
       const mTotalTaxExempt = Math.min(
         Math.min(Number(te.meal) || 0, TAX_EXEMPT_LIMITS.meal) +
         Math.min(Number(te.transport) || 0, TAX_EXEMPT_LIMITS.transport) +
-        Math.min(Number(te.childcare) || 0, TAX_EXEMPT_LIMITS.childcare),
+        Math.min(Number(te.childcare) || 0, mChildcareLimit),
         employee.monthlyWage
       );
       const mTaxableAmount = employee.monthlyWage - mTotalTaxExempt;
