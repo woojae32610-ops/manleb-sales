@@ -1093,9 +1093,8 @@ const EmployeeForm = ({ initialData, onSubmit, onCancel, onDelete }) => {
                     value={taxExempt.numberOfChildren || ''}
                     onChange={(e) => {
                       const numChildren = Math.max(0, Math.min(Number(e.target.value) || 0, 10));
-                      const newLimit = numChildren * TAX_EXEMPT_LIMITS.childcarePerChild;
-                      const adjustedChildcare = Math.min(Number(taxExempt.childcare) || 0, newLimit);
-                      setForm({ ...form, taxExempt: { ...taxExempt, numberOfChildren: numChildren, childcare: numChildren === 0 ? 0 : adjustedChildcare } });
+                      const autoAmount = numChildren * TAX_EXEMPT_LIMITS.childcarePerChild;
+                      setForm({ ...form, taxExempt: { ...taxExempt, numberOfChildren: numChildren, childcare: autoAmount } });
                     }}
                     min={0}
                     max={10}
